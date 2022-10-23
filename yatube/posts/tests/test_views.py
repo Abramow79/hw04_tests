@@ -77,9 +77,13 @@ class PostPagesTests(TestCase):
         response = self.guest_client.get(
             reverse("posts:post_detail", kwargs={"post_id": self.post.id})
         )
-        self.assertEqual(response.context.get("post").text, self.post.text)
-        self.assertEqual(response.context.get("post").author, self.post.author)
-        self.assertEqual(response.context.get("post").group, self.post.group)
+        first_object = response.context['post']
+        post_aurhor_0 = first_object.author.username
+        post_text_0 = first_object.text
+        post_group_0 = first_object.group.title
+        self.assertEqual(post_aurhor_0, 'Abramow_test')
+        self.assertEqual(post_text_0, 'Тестовый пост')
+        self.assertEqual(post_group_0, 'Тестовая группа')
 
     def test_create_edit_show_correct_context(self):
         """Шаблон create_edit сформирован с правильным контекстом."""

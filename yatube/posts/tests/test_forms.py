@@ -1,5 +1,7 @@
+from http import HTTPStatus
 from django.test import Client, TestCase
 from django.urls import reverse
+
 
 from ..models import Post, Group, User
 
@@ -7,7 +9,6 @@ from ..models import Post, Group, User
 class PostFormTests(TestCase):
     def setUp(self):
         self.user = User.objects.create(username="Abramow_test")
-        self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
@@ -23,8 +24,7 @@ class PostFormTests(TestCase):
                 "username": self.user.username})
         )
         self.assertEqual(Post.objects.count(), posts_count + 1)
-        self.assertTrue(Post.objects.filter(text="Тестовый текст").exists())
-        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Post.objects.filter(text=form_data['text']).exists())
 
     def test_post_edit(self):
         """Валидная форма изменила запись в Post."""
@@ -49,5 +49,10 @@ class PostFormTests(TestCase):
                 "post_id": self.post.id})
         )
         self.assertEqual(Post.objects.count(), posts_count)
-        self.assertTrue(Post.objects.filter(text="Изменяем текст").exists())
-        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Post.objects.filter(
+            text="Изменяем текст",
+            group=self.group.id,
+            pk=self.post.pk,
+        ).exists()
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)

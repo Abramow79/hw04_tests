@@ -1,3 +1,5 @@
+# from email.policy import HTTP
+from http import HTTPStatus
 from django.test import Client, TestCase
 from django.contrib.auth import get_user_model
 
@@ -8,12 +10,9 @@ User = get_user_model()
 
 class StaticURLTests(TestCase):
     def test_homepage(self):
-        # Создаем экземпляр клиента
-        guest_client = Client()
-        # Делаем запрос к главной странице и проверяем статус
-        response = guest_client.get('/')
-        # Утверждаем, что для прохождения теста код должен быть равен 200
-        self.assertEqual(response.status_code, 200)
+        self.guest_client = Client()
+        response = self.guest_client.get('/')
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
 
 class PostURLTests(TestCase):
@@ -41,9 +40,9 @@ class PostURLTests(TestCase):
         """URL-адрес использует соответствующий шаблон."""
         templates_url_names = {
             '/': 'posts/index.html',
-            '/group/slug/': 'posts/group_list.html',
-            '/profile/auth/': 'posts/profile.html',
-            '/posts/1/': 'posts/post_detail.html',
+            f'/group/{self.group.slug}/': 'posts/group_list.html',
+            f'/profile/{self.user.username}/': 'posts/profile.html',
+            f'/posts/{self.post.id}/': 'posts/post_detail.html',
         }
         for address, template in templates_url_names.items():
             with self.subTest(address=address):
@@ -96,4 +95,4 @@ class PostURLTests(TestCase):
     def test_unexisting_page_exists_at_desired_location(self):
         """Страница /unexisting_page/ доступна любому пользователю."""
         response = self.guest_client.get('/unexisting_pages/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
