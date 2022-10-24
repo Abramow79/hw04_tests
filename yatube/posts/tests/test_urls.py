@@ -1,17 +1,16 @@
-# from email.policy import HTTP
 from http import HTTPStatus
+
 from django.test import Client, TestCase
 from django.contrib.auth import get_user_model
 
-from ..models import Post, Group
+from ..models import Group, Post
 
 User = get_user_model()
 
 
 class StaticURLTests(TestCase):
     def test_homepage(self):
-        self.guest_client = Client()
-        response = self.guest_client.get('/')
+        response = self.client.get('/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
 
@@ -32,7 +31,6 @@ class PostURLTests(TestCase):
         )
 
     def setUp(self):
-        self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
@@ -46,7 +44,7 @@ class PostURLTests(TestCase):
         }
         for address, template in templates_url_names.items():
             with self.subTest(address=address):
-                response = self.guest_client.get(address)
+                response = self.client.get(address)
                 self.assertTemplateUsed(response, template)
 
     def test_create_url_uses_correct_template(self):
@@ -58,26 +56,26 @@ class PostURLTests(TestCase):
         """URL-адрес доступен"""
         templates_url_names = [
             '/',
-            '/group/slug/',
-            '/profile/auth/',
-            '/posts/1/',
+            f'/group/{self.group.slug}/',
+            f'/profile/{self.user.username}/',
+            f'/posts/{self.post.id}/',
         ]
         for address in templates_url_names:
             with self.subTest(address=address):
-                response = self.guest_client.get(address)
-                self.assertEqual(response.status_code, 200)
+                response = self.client.get(address)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_create_url_exists_at_desired_location_authorized(self):
         """Страница /create/ доступна авторизованному
         пользователю."""
         response = self.authorized_client.get('/create/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_create_url_redirect_anonymous_on_admin_login(self):
         """Страница по адресу /create/ перенаправит анонимного
         пользователя на страницу логина.
         """
-        response = self.guest_client.get('/create/', follow=True)
+        response = self.client.get('/create/', follow=True)
         self.assertRedirects(
             response, ('/auth/login/?next=/create/'))
 
@@ -85,7 +83,7 @@ class PostURLTests(TestCase):
         """Страница /post/post_id/edit доступна авторизованному
         пользователю."""
         response = self.authorized_client.get(f'/posts/{self.post.id}/edit/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_post_edit_url_uses_correct_template(self):
         """Страница /posts/post-edit использует шаблон /create_post.html"""
@@ -94,5 +92,5 @@ class PostURLTests(TestCase):
 
     def test_unexisting_page_exists_at_desired_location(self):
         """Страница /unexisting_page/ доступна любому пользователю."""
-        response = self.guest_client.get('/unexisting_pages/')
+        response = self.client.get('/unexisting_pages/')
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)

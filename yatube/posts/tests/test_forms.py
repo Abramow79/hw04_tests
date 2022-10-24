@@ -1,7 +1,7 @@
 from http import HTTPStatus
+
 from django.test import Client, TestCase
 from django.urls import reverse
-
 
 from ..models import Post, Group, User
 
@@ -50,7 +50,7 @@ class PostFormTests(TestCase):
         )
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertTrue(Post.objects.filter(
-            text="Изменяем текст",
+            text=form_data['text'],
             group=self.group.id,
             pk=self.post.pk,
         ).exists()

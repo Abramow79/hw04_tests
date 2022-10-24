@@ -1,9 +1,10 @@
 from django import forms
+
+from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
-from django.conf import settings
 
-from ..models import Post, Group, User
+from ..models import Group, Post, User
 
 
 class PostPagesTests(TestCase):
@@ -39,7 +40,6 @@ class PostPagesTests(TestCase):
         }
 
     def setUp(self):
-        self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(PostPagesTests.user)
 
@@ -52,13 +52,13 @@ class PostPagesTests(TestCase):
 
     def test_index_show_correct_context(self):
         """Список постов в шаблоне index равен ожидаемому контексту."""
-        response = self.guest_client.get(reverse("posts:index"))
+        response = self.client.get(reverse("posts:index"))
         expected = list(Post.objects.all()[:10])
         self.assertEqual(list(response.context["page_obj"]), expected)
 
     def test_group_list_show_correct_context(self):
         """Список постов в шаблоне group_list равен ожидаемому контексту."""
-        response = self.guest_client.get(
+        response = self.client.get(
             reverse("posts:group_posts", kwargs={"slug": self.group.slug})
         )
         expected = list(Post.objects.filter(group_id=self.group.id)[:10])
@@ -66,7 +66,7 @@ class PostPagesTests(TestCase):
 
     def test_profile_show_correct_context(self):
         """Список постов в шаблоне profile равен ожидаемому контексту."""
-        response = self.guest_client.get(
+        response = self.client.get(
             reverse("posts:profile", args=(self.post.author,))
         )
         expected = list(Post.objects.filter(author_id=self.user.id)[:10])
@@ -74,16 +74,13 @@ class PostPagesTests(TestCase):
 
     def test_post_detail_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
-        response = self.guest_client.get(
+        response = self.client.get(
             reverse("posts:post_detail", kwargs={"post_id": self.post.id})
         )
-        first_object = response.context['post']
-        post_aurhor_0 = first_object.author.username
-        post_text_0 = first_object.text
-        post_group_0 = first_object.group.title
-        self.assertEqual(post_aurhor_0, 'Abramow_test')
-        self.assertEqual(post_text_0, 'Тестовый пост')
-        self.assertEqual(post_group_0, 'Тестовая группа')
+        self.assertEqual(response.context.get("post").text, self.post.text)
+        self.assertEqual(response.context.get("post").id, self.post.id)
+        self.assertEqual(response.context.get("post").author, self.post.author)
+        self.assertEqual(response.context.get("post").group, self.post.group)
 
     def test_create_edit_show_correct_context(self):
         """Шаблон create_edit сформирован с правильным контекстом."""
